@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderCatalog(allVideoCatalog);
         } catch (err) {
             console.error("Error initializing platform catalog:", err);
-            modelsWrapper.innerHTML = '<p style="text-align:center; color: red;">Failed to load catalog. Please refresh.</p>';
+            modelsWrapper.innerHTML = '<p style="text-align:center; color: white;">Failed to load catalog. Please refresh.</p>';
         }
     }
 
