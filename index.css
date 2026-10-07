@@ -1,3 +1,4 @@
+/* #region general */
 body {
     background-color: #121212;
     color: white;
@@ -7,7 +8,9 @@ body {
 button {
     cursor: pointer;
 }
+/* #endregion */
 
+/* #region search-bar */
 .search-bar {
     display: flex;
     flex-direction: column;
@@ -70,11 +73,11 @@ button {
 .search-bar-options-item:hover {
   background: gray;
 }
+/* #endregion */
 
-.model-complete {
-    display: flex;
-    flex-direction: column;
-    margin-top: 20px;
+/* #region videos-containers */
+h2 {
+    font-size: x-large;
 }
 
 .videos-container {
@@ -88,7 +91,7 @@ button {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 40%;
+    min-width: 50%;
     border: 1px solid gray;
     cursor: pointer;
 }
@@ -110,7 +113,9 @@ button {
 .video-title {
     font-size: large;
 }
+/* #endregion */
 
+/* #region video-modal */
 #video-modal {
     position: absolute;
     display: none;
@@ -168,7 +173,9 @@ button {
     margin: 0px;
     font-size: 60px;
 }
+/* #endregion */
 
+/* #region paywall-modal */
 #paywall-modal {
     position: absolute;
     display: none;
@@ -278,4 +285,11 @@ button {
   border-top-color: transparent;
   border-radius: 50%;
   vertical-align: middle;
+}
+/* #endregion */
+
+@media screen and (max-width: 990px) {
+#search-bar-btn {
+    width: 82%;
+}
 }
