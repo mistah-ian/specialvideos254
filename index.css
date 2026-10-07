@@ -97,7 +97,7 @@ h2 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 50%;
+    min-width: 60%;
     border: 1px solid gray;
     cursor: pointer;
 }
