@@ -80,6 +80,10 @@ h2 {
     font-size: larger;
 }
 
+#models-wrapper {
+    margin-top: 20px;
+}
+
 .videos-container {
     display: flex;
     flex-direction: row;
@@ -111,7 +115,7 @@ h2 {
 }
 
 .video-title {
-    font-size: large;
+    font-size: medium;
 }
 /* #endregion */
 
