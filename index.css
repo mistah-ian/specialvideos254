@@ -288,7 +288,7 @@ h2 {
 }
 /* #endregion */
 
-@media screen and (max-width: 990px) {
+@media screen and (min-width: 990px) {
 #search-bar-btn {
     width: 82%;
 }
