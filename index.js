@@ -7,10 +7,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let previewTimer = null;
     let tokensDatabase = [];
 
-    // Local Storage: Only phone number is persisted
+    // Local Storage: Only the user's phone number is persisted locally
     let storedPhone = localStorage.getItem('user_phone') || '';
 
-    // DOM References
+    // DOM Elements Selection
     const searchBtn = document.getElementById('search-bar-btn');
     const searchOptions = document.getElementById('search-bar-options');
     const btnTitle = searchBtn.querySelector('.search-bar-btn-title');
@@ -34,13 +34,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const detailsView = document.querySelector('.paywall-modal-content-details');
     const waitView = document.querySelector('.paywall-modal-content-please-wait');
 
-    // Pre-fill input if user phone is saved in localStorage
+    // Pre-fill input if a valid phone number exists in LocalStorage
     if (storedPhone) {
         payInput.value = formatPhoneNumberString(storedPhone);
     }
 
     /* =========================================
-       1. Phone Number Auto-Formatting & Masking
+       1. Phone Masking & Validation (0X-XXX-XXX-XX)
        ========================================= */
     function formatPhoneNumberString(value) {
         const digits = value.replace(/\D/g, '').slice(0, 10);
@@ -66,28 +66,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /* =========================================
-       2. Fetch Videos and Access Tokens
+       2. Initialize Platform via mmw.php (Avoids CORS)
        ========================================= */
     async function initPlatform() {
         try {
-            // Load access tokens from server
-            const tokensRes = await fetch(`${SERVER_URL}/tokens.json?t=${Date.now()}`);
+            // Fetch access tokens through mmw.php
+            const tokensRes = await fetch(`${SERVER_URL}/mmw.php?action=get_tokens&t=${Date.now()}`);
             if (tokensRes.ok) {
                 tokensDatabase = await tokensRes.json();
             }
 
-            // Load videos catalog
-            const videosRes = await fetch(`${SERVER_URL}/videos/videos.json?t=${Date.now()}`);
+            // Fetch video catalog through mmw.php
+            const videosRes = await fetch(`${SERVER_URL}/mmw.php?action=get_videos&t=${Date.now()}`);
             allVideoCatalog = await videosRes.json();
 
             renderCatalog(allVideoCatalog);
         } catch (err) {
             console.error("Error initializing platform catalog:", err);
+            modelsWrapper.innerHTML = '<p style="text-align:center; color: red;">Failed to load catalog. Please refresh.</p>';
         }
     }
 
     /* =========================================
-       3. Access Control Verification
+       3. Access Control Verification (tokens.json)
        ========================================= */
     function isVideoUnlockedForUser(uniqueId) {
         if (!storedPhone) return false;
@@ -102,10 +103,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const index = ids.indexOf(uniqueId);
         if (index === -1) return false;
 
-        const expString = dates[index]; // Format: MM/DD/YYYY-HHMM
+        const expString = dates[index]; // Expected format: MM/DD/YYYY-HHMM
         if (!expString) return false;
 
-        // Parse expiration string MM/DD/YYYY-HHMM
         const [datePart, timePart] = expString.split('-');
         if (!datePart || !timePart) return false;
 
@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /* =========================================
-       4. Render Catalog & Populate Dropdown
+       4. Render UI Catalog & Search Dropdown
        ========================================= */
     function renderCatalog(catalog) {
         modelsWrapper.innerHTML = '';
@@ -133,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
 
         catalog.forEach((model) => {
-            // Populate Dropdown
+            // Populate Search Dropdown Item
             const optionDiv = document.createElement('div');
             optionDiv.className = 'search-bar-options-item';
             optionDiv.setAttribute('data-model-id', model.id);
@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const videosContainer = document.createElement('div');
             videosContainer.className = 'videos-container';
 
-            // Split delimited fields
+            // Split delimited strings
             const paths = model.file_paths.split(' | ').map(s => s.trim());
             const uniqueIds = model.video_unique_ids.split(' | ').map(s => s.trim());
             const titles = model.video_titles.split(' | ').map(s => s.trim());
@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /* =========================================
-       5. Dropdown Navigation Logic
+       5. Dropdown Menu Controls
        ========================================= */
     function openDropdown() {
         searchOptions.style.display = 'block';
@@ -262,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* =========================================
-       6. Video Modal & Paywall Enforcement
+       6. Video Modal & Preview Paywall
        ========================================= */
     function openVideoModal(index) {
         if (index < 0 || index >= flatPlaylist.length) return;
@@ -270,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentVideoIndex = index;
         const videoData = flatPlaylist[currentVideoIndex];
 
-        // Update Next/Previous Button Visibility
+        // Toggle Next / Previous Navigation Visibility
         if (currentVideoIndex === 0) {
             prevContainer.style.visibility = 'hidden';
         } else {
@@ -283,14 +283,14 @@ document.addEventListener("DOMContentLoaded", () => {
             nextContainer.style.visibility = 'visible';
         }
 
-        // Set Video Source
+        // Assign video source and play
         modalVideoSource.setAttribute('src', videoData.src);
         modalVideo.load();
         modalVideo.play();
 
         videoModal.style.display = 'flex';
 
-        // Check if unlocked via phone number and tokens.json
+        // Check if unlocked for user
         const unlocked = isVideoUnlockedForUser(videoData.uniqueId);
 
         clearTimeout(previewTimer);
@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function triggerPaywall(videoData) {
         modalVideo.pause();
 
-        // Update pay button text with dynamic video price
+        // Dynamically update pay button with price from videos.json
         payBtn.textContent = `Pay ${videoData.priceText}`;
 
         detailsView.style.display = 'block';
@@ -341,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* =========================================
-       7. Payment Submission to mmw.php
+       7. Payment Triggering & Polling
        ========================================= */
     payBtn.addEventListener('click', async () => {
         const validPhone = validatePhone(payInput.value);
@@ -354,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
         payError.style.display = 'none';
         const currentVideo = flatPlaylist[currentVideoIndex];
 
-        // Store user phone in localStorage
+        // Store user phone in LocalStorage
         localStorage.setItem('user_phone', validPhone);
         storedPhone = validPhone;
 
@@ -388,7 +388,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Poll for payment confirmation
     function pollPaymentStatus(checkoutId, videoData) {
         const interval = setInterval(async () => {
             try {
@@ -398,8 +397,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (result.status === 'COMPLETED') {
                     clearInterval(interval);
 
-                    // Re-sync tokens.json
-                    const tokensRes = await fetch(`${SERVER_URL}/tokens.json?t=${Date.now()}`);
+                    // Re-sync tokens from mmw.php
+                    const tokensRes = await fetch(`${SERVER_URL}/mmw.php?action=get_tokens&t=${Date.now()}`);
                     if (tokensRes.ok) {
                         tokensDatabase = await tokensRes.json();
                     }
@@ -407,15 +406,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     paywallModal.style.display = 'none';
                     alert("Payment successful! Full video unlocked for 24 hours.");
 
-                    // Resume video playback without preview limit
                     modalVideo.play();
                 }
             } catch (e) {
-                // Ignore transient network errors during polling
+                // Ignore transient polling errors
             }
         }, 3000);
     }
 
-    // Initialize Catalog
+    // Run initialization on page load
     initPlatform();
 });
