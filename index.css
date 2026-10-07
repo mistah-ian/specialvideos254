@@ -319,6 +319,16 @@ h2 {
 
 @media screen and (min-width: 990px) {
 #search-bar-btn {
-    width: 82%;
+    width: 72%;
+    font-size: large;
+}
+#search-bar-options {
+    width: 70%;
+}
+.search-bar-options-item-title {
+    font-size: medium;
+}
+.search-bar-options-item-desc {
+    font-size: medium;
 }
 }
