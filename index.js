@@ -7,22 +7,20 @@ document.addEventListener("DOMContentLoaded", () => {
     let previewTimer = null;
     let tokensDatabase = [];
 
-    // Local Storage: Only the user's phone number is persisted locally
     let storedPhone = localStorage.getItem('user_phone') || '';
 
-    // DOM Elements Selection
     const searchBtn = document.getElementById('search-bar-btn');
     const searchOptions = document.getElementById('search-bar-options');
-    const btnTitle = searchBtn.querySelector('.search-bar-btn-title');
-    const btnIcon = searchBtn.querySelector('.search-bar-btn-icon');
+    const btnTitle = searchBtn ? searchBtn.querySelector('.search-bar-btn-title') : null;
+    const btnIcon = searchBtn ? searchBtn.querySelector('.search-bar-btn-icon') : null;
     const modelsWrapper = document.getElementById('models-wrapper');
 
     const videoModal = document.getElementById('video-modal');
-    const modalVideo = videoModal.querySelector('video');
-    const modalVideoSource = modalVideo.querySelector('source');
+    const modalVideo = videoModal ? videoModal.querySelector('video') : null;
+    const modalVideoSource = modalVideo ? modalVideo.querySelector('source') : null;
     const modalCloseBtn = document.getElementById('video-modal-close-btn');
-    const prevContainer = videoModal.querySelector('.video-modal-video-container-previous');
-    const nextContainer = videoModal.querySelector('.video-modal-video-container-next');
+    const prevContainer = videoModal ? videoModal.querySelector('.video-modal-video-container-previous') : null;
+    const nextContainer = videoModal ? videoModal.querySelector('.video-modal-video-container-next') : null;
     const prevBtn = document.getElementById('video-modal-video-container-previous-btn');
     const nextBtn = document.getElementById('video-modal-video-container-next-btn');
 
@@ -34,14 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const detailsView = document.querySelector('.paywall-modal-content-details');
     const waitView = document.querySelector('.paywall-modal-content-please-wait');
 
-    // Pre-fill input if a valid phone number exists in LocalStorage
-    if (storedPhone) {
+    if (storedPhone && payInput) {
         payInput.value = formatPhoneNumberString(storedPhone);
     }
 
-    /* =========================================
-       1. Phone Masking & Validation (0X-XXX-XXX-XX)
-       ========================================= */
+    /* Phone Masking & Validation */
     function formatPhoneNumberString(value) {
         const digits = value.replace(/\D/g, '').slice(0, 10);
         let formatted = '';
@@ -52,11 +47,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return formatted;
     }
 
-    payInput.addEventListener('input', (e) => {
-        payError.style.display = 'none';
-        const rawDigits = e.target.value.replace(/\D/g, '');
-        e.target.value = formatPhoneNumberString(rawDigits);
-    });
+    if (payInput) {
+        payInput.addEventListener('input', (e) => {
+            if (payError) payError.style.display = 'none';
+            const rawDigits = e.target.value.replace(/\D/g, '');
+            e.target.value = formatPhoneNumberString(rawDigits);
+        });
+    }
 
     function validatePhone(formattedVal) {
         const digits = formattedVal.replace(/\D/g, '');
@@ -65,45 +62,42 @@ document.addEventListener("DOMContentLoaded", () => {
         return digits;
     }
 
-    /* =========================================
-       2. Initialize Platform via mmw.php (Avoids CORS)
-       ========================================= */
+    /* Initialize Platform */
     async function initPlatform() {
         try {
-            // Fetch access tokens through mmw.php
             const tokensRes = await fetch(`${SERVER_URL}/mmw.php?action=get_tokens&t=${Date.now()}`);
             if (tokensRes.ok) {
                 tokensDatabase = await tokensRes.json();
             }
 
-            // Fetch video catalog through mmw.php
             const videosRes = await fetch(`${SERVER_URL}/mmw.php?action=get_videos&t=${Date.now()}`);
-            allVideoCatalog = await videosRes.json();
+            if (!videosRes.ok) throw new Error("Failed to fetch video catalog");
 
+            allVideoCatalog = await videosRes.json();
             renderCatalog(allVideoCatalog);
         } catch (err) {
             console.error("Error initializing platform catalog:", err);
-            modelsWrapper.innerHTML = '<p style="text-align:center; color: red;">Failed to load catalog. Please refresh.</p>';
+            if (modelsWrapper) {
+                modelsWrapper.innerHTML = '<p style="text-align:center; color: red; margin-top: 40px;">Failed to load catalog. Please check server JSON format.</p>';
+            }
         }
     }
 
-    /* =========================================
-       3. Access Control Verification (tokens.json)
-       ========================================= */
+    /* Access Verification */
     function isVideoUnlockedForUser(uniqueId) {
         if (!storedPhone) return false;
         const userDigits = storedPhone.replace(/\D/g, '');
 
-        const record = tokensDatabase.find(item => item.phone_number.replace(/\D/g, '') === userDigits);
-        if (!record) return false;
+        const record = tokensDatabase.find(item => item.phone_number && item.phone_number.replace(/\D/g, '') === userDigits);
+        if (!record || !record.accessible_videos_ids) return false;
 
         const ids = record.accessible_videos_ids.split(' | ').map(s => s.trim());
-        const dates = record.expiration_dates.split(' | ').map(s => s.trim());
+        const dates = record.expiration_dates ? record.expiration_dates.split(' | ').map(s => s.trim()) : [];
 
         const index = ids.indexOf(uniqueId);
         if (index === -1) return false;
 
-        const expString = dates[index]; // Expected format: MM/DD/YYYY-HHMM
+        const expString = dates[index];
         if (!expString) return false;
 
         const [datePart, timePart] = expString.split('-');
@@ -117,33 +111,33 @@ document.addEventListener("DOMContentLoaded", () => {
         return Date.now() < expDate.getTime();
     }
 
-    /* =========================================
-       4. Render UI Catalog & Search Dropdown
-       ========================================= */
+    /* Render Catalog */
     function renderCatalog(catalog) {
+        if (!modelsWrapper) return;
         modelsWrapper.innerHTML = '';
         flatPlaylist = [];
 
-        // Reset search options dropdown
-        searchOptions.innerHTML = `
-            <div class="search-bar-options-item" data-model-id="all">
-                <p class="search-bar-options-item-title">All Models</p>
-                <p class="search-bar-options-item-desc">Show all available content</p>
-            </div>
-        `;
+        if (searchOptions) {
+            searchOptions.innerHTML = `
+                <div class="search-bar-options-item" data-model-id="all">
+                    <p class="search-bar-options-item-title">All Models</p>
+                    <p class="search-bar-options-item-desc">Show all available content</p>
+                </div>
+            `;
+        }
 
         catalog.forEach((model) => {
-            // Populate Search Dropdown Item
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'search-bar-options-item';
-            optionDiv.setAttribute('data-model-id', model.id);
-            optionDiv.innerHTML = `
-                <p class="search-bar-options-item-title">${model.model_name}</p>
-                <p class="search-bar-options-item-desc">${model.search_bar_desc}</p>
-            `;
-            searchOptions.appendChild(optionDiv);
+            if (searchOptions) {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'search-bar-options-item';
+                optionDiv.setAttribute('data-model-id', model.id);
+                optionDiv.innerHTML = `
+                    <p class="search-bar-options-item-title">${model.model_name}</p>
+                    <p class="search-bar-options-item-desc">${model.search_bar_desc}</p>
+                `;
+                searchOptions.appendChild(optionDiv);
+            }
 
-            // Populate Model Section
             const modelSection = document.createElement('div');
             modelSection.className = 'model-complete';
             modelSection.setAttribute('data-model-id', model.id);
@@ -156,16 +150,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const videosContainer = document.createElement('div');
             videosContainer.className = 'videos-container';
 
-            // Split delimited strings
-            const paths = model.file_paths.split(' | ').map(s => s.trim());
-            const uniqueIds = model.video_unique_ids.split(' | ').map(s => s.trim());
-            const titles = model.video_titles.split(' | ').map(s => s.trim());
-            const previewTimes = model.preview_times.split(' | ').map(s => s.trim());
-            const prices = model.video_prices.split(' | ').map(s => s.trim());
+            const paths = (model.file_paths || '').split(' | ').map(s => s.trim());
+            const uniqueIds = (model.video_unique_ids || '').split(' | ').map(s => s.trim());
+            const titles = (model.video_titles || '').split(' | ').map(s => s.trim());
+            const previewTimes = (model.preview_times || '').split(' | ').map(s => s.trim());
+            const prices = (model.video_prices || '').split(' | ').map(s => s.trim());
 
             paths.forEach((path, idx) => {
-                const uniqueId = uniqueIds[idx];
-                const videoTitle = titles[idx];
+                if (!path) return;
+                const uniqueId = uniqueIds[idx] || `${model.id}-${idx + 1}`;
+                const videoTitle = titles[idx] || `Video ${idx + 1}`;
                 const pTimeMs = parseInt(previewTimes[idx]) || 5000;
                 const priceText = prices[idx] || "10 KES";
 
@@ -203,35 +197,38 @@ document.addEventListener("DOMContentLoaded", () => {
         attachDropdownClickHandlers();
     }
 
-    /* =========================================
-       5. Dropdown Menu Controls
-       ========================================= */
+    /* Dropdown Controls */
     function openDropdown() {
+        if (!searchOptions) return;
         searchOptions.style.display = 'block';
-        btnIcon.textContent = '▲';
-        searchBtn.style.borderBottom = 'none';
+        if (btnIcon) btnIcon.textContent = '▲';
+        if (searchBtn) searchBtn.style.borderBottom = 'none';
         document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
     }
 
     function closeDropdown() {
+        if (!searchOptions) return;
         searchOptions.style.display = 'none';
-        btnIcon.textContent = '▼';
-        searchBtn.style.borderBottom = '';
+        if (btnIcon) btnIcon.textContent = '▼';
+        if (searchBtn) searchBtn.style.borderBottom = '';
         document.documentElement.style.overflow = '';
         document.body.style.overflow = '';
     }
 
-    searchBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (searchOptions.style.display === 'block') {
-            closeDropdown();
-        } else {
-            openDropdown();
-        }
-    });
+    if (searchBtn) {
+        searchBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (searchOptions && searchOptions.style.display === 'block') {
+                closeDropdown();
+            } else {
+                openDropdown();
+            }
+        });
+    }
 
     function attachDropdownClickHandlers() {
+        if (!searchOptions) return;
         const optionItems = searchOptions.querySelectorAll('.search-bar-options-item');
         optionItems.forEach(item => {
             item.addEventListener('click', (e) => {
@@ -239,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const selectedTitle = item.querySelector('.search-bar-options-item-title').textContent;
                 const modelId = item.getAttribute('data-model-id');
 
-                btnTitle.textContent = selectedTitle;
+                if (btnTitle) btnTitle.textContent = selectedTitle;
                 closeDropdown();
 
                 const modelSections = document.querySelectorAll('.model-complete');
@@ -256,41 +253,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.addEventListener('click', (e) => {
         const searchBarContainer = document.querySelector('.search-bar');
-        if (searchBarContainer && !searchBarContainer.contains(e.target) && searchOptions.style.display === 'block') {
+        if (searchBarContainer && !searchBarContainer.contains(e.target) && searchOptions && searchOptions.style.display === 'block') {
             closeDropdown();
         }
     });
 
-    /* =========================================
-       6. Video Modal & Preview Paywall
-       ========================================= */
+    /* Video Modal & Paywall Logic */
     function openVideoModal(index) {
-        if (index < 0 || index >= flatPlaylist.length) return;
+        if (index < 0 || index >= flatPlaylist.length || !videoModal) return;
 
         currentVideoIndex = index;
         const videoData = flatPlaylist[currentVideoIndex];
 
-        // Toggle Next / Previous Navigation Visibility
-        if (currentVideoIndex === 0) {
-            prevContainer.style.visibility = 'hidden';
-        } else {
-            prevContainer.style.visibility = 'visible';
-        }
+        if (prevContainer) prevContainer.style.visibility = (currentVideoIndex === 0) ? 'hidden' : 'visible';
+        if (nextContainer) nextContainer.style.visibility = (currentVideoIndex === flatPlaylist.length - 1) ? 'hidden' : 'visible';
 
-        if (currentVideoIndex === flatPlaylist.length - 1) {
-            nextContainer.style.visibility = 'hidden';
-        } else {
-            nextContainer.style.visibility = 'visible';
+        if (modalVideoSource && modalVideo) {
+            modalVideoSource.setAttribute('src', videoData.src);
+            modalVideo.load();
+            modalVideo.play();
         }
-
-        // Assign video source and play
-        modalVideoSource.setAttribute('src', videoData.src);
-        modalVideo.load();
-        modalVideo.play();
 
         videoModal.style.display = 'flex';
 
-        // Check if unlocked for user
         const unlocked = isVideoUnlockedForUser(videoData.uniqueId);
 
         clearTimeout(previewTimer);
@@ -302,91 +287,90 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function triggerPaywall(videoData) {
-        modalVideo.pause();
+        if (modalVideo) modalVideo.pause();
 
-        // Dynamically update pay button with price from videos.json
-        payBtn.textContent = `Pay ${videoData.priceText}`;
+        if (payBtn) payBtn.textContent = `Pay ${videoData.priceText}`;
+        if (detailsView) detailsView.style.display = 'block';
+        if (waitView) waitView.style.display = 'none';
+        if (payError) payError.style.display = 'none';
 
-        detailsView.style.display = 'block';
-        waitView.style.display = 'none';
-        payError.style.display = 'none';
-
-        paywallModal.style.display = 'flex';
+        if (paywallModal) paywallModal.style.display = 'flex';
     }
 
     function closeVideoModal() {
         clearTimeout(previewTimer);
-        modalVideo.pause();
-        modalVideoSource.setAttribute('src', '');
-        videoModal.style.display = 'none';
-        paywallModal.style.display = 'none';
+        if (modalVideo) modalVideo.pause();
+        if (modalVideoSource) modalVideoSource.setAttribute('src', '');
+        if (videoModal) videoModal.style.display = 'none';
+        if (paywallModal) paywallModal.style.display = 'none';
     }
 
-    modalCloseBtn.addEventListener('click', closeVideoModal);
-    paywallCloseBtn.addEventListener('click', () => {
-        paywallModal.style.display = 'none';
-        closeVideoModal();
-    });
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeVideoModal);
+    if (paywallCloseBtn) {
+        paywallCloseBtn.addEventListener('click', () => {
+            if (paywallModal) paywallModal.style.display = 'none';
+            closeVideoModal();
+        });
+    }
 
-    prevBtn.addEventListener('click', () => {
-        if (currentVideoIndex > 0) {
-            openVideoModal(currentVideoIndex - 1);
-        }
-    });
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentVideoIndex > 0) openVideoModal(currentVideoIndex - 1);
+        });
+    }
 
-    nextBtn.addEventListener('click', () => {
-        if (currentVideoIndex < flatPlaylist.length - 1) {
-            openVideoModal(currentVideoIndex + 1);
-        }
-    });
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (currentVideoIndex < flatPlaylist.length - 1) openVideoModal(currentVideoIndex + 1);
+        });
+    }
 
-    /* =========================================
-       7. Payment Triggering & Polling
-       ========================================= */
-    payBtn.addEventListener('click', async () => {
-        const validPhone = validatePhone(payInput.value);
+    /* Payment Actions */
+    if (payBtn) {
+        payBtn.addEventListener('click', async () => {
+            const validPhone = validatePhone(payInput.value);
 
-        if (!validPhone) {
-            payError.style.display = 'block';
-            return;
-        }
-
-        payError.style.display = 'none';
-        const currentVideo = flatPlaylist[currentVideoIndex];
-
-        // Store user phone in LocalStorage
-        localStorage.setItem('user_phone', validPhone);
-        storedPhone = validPhone;
-
-        detailsView.style.display = 'none';
-        waitView.style.display = 'flex';
-
-        try {
-            const response = await fetch(`${SERVER_URL}/mmw.php`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phone_number: validPhone,
-                    video_id: currentVideo.uniqueId,
-                    amount: currentVideo.priceText
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.checkout_id) {
-                pollPaymentStatus(data.checkout_id, currentVideo);
-            } else {
-                alert(data.message || "Failed to trigger payment.");
-                detailsView.style.display = 'block';
-                waitView.style.display = 'none';
+            if (!validPhone) {
+                if (payError) payError.style.display = 'block';
+                return;
             }
-        } catch (err) {
-            alert("Payment error occurred. Please try again.");
-            detailsView.style.display = 'block';
-            waitView.style.display = 'none';
-        }
-    });
+
+            if (payError) payError.style.display = 'none';
+            const currentVideo = flatPlaylist[currentVideoIndex];
+
+            localStorage.setItem('user_phone', validPhone);
+            storedPhone = validPhone;
+
+            if (detailsView) detailsView.style.display = 'none';
+            if (waitView) waitView.style.display = 'flex';
+
+            try {
+                const response = await fetch(`${SERVER_URL}/mmw.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone_number: validPhone,
+                        video_id: currentVideo.uniqueId,
+                        amount: currentVideo.priceText
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.checkout_id) {
+                    pollPaymentStatus(data.checkout_id, currentVideo);
+                } else {
+                    alert(data.message || "Failed to trigger payment.");
+                    if (detailsView) detailsView.style.display = 'block';
+                    if (waitView) waitView.style.display = 'none';
+                }
+            } catch (err) {
+                alert("Payment error occurred. Please try again.");
+                if (detailsView) detailsView.style.display = 'block';
+                if (waitView) waitView.style.display = 'none';
+            }
+        });
+    }
 
     function pollPaymentStatus(checkoutId, videoData) {
         const interval = setInterval(async () => {
@@ -397,23 +381,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (result.status === 'COMPLETED') {
                     clearInterval(interval);
 
-                    // Re-sync tokens from mmw.php
                     const tokensRes = await fetch(`${SERVER_URL}/mmw.php?action=get_tokens&t=${Date.now()}`);
                     if (tokensRes.ok) {
                         tokensDatabase = await tokensRes.json();
                     }
 
-                    paywallModal.style.display = 'none';
+                    if (paywallModal) paywallModal.style.display = 'none';
                     alert("Payment successful! Full video unlocked for 24 hours.");
 
-                    modalVideo.play();
+                    if (modalVideo) modalVideo.play();
                 }
             } catch (e) {
-                // Ignore transient polling errors
+                // Ignore transient network errors
             }
         }, 3000);
     }
 
-    // Run initialization on page load
     initPlatform();
 });
