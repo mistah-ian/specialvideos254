@@ -95,16 +95,18 @@ h2 {
 }
 
 .videos-container::-webkit-scrollbar {
-    height: 20px; 
+    height: 25px; 
     display: block; 
 }
 
 .videos-container::-webkit-scrollbar-track {
     background-color: darkgray; 
+    border-radius: 2px;
 }
 
 .videos-container::-webkit-scrollbar-thumb {
     background: white; 
+    border-radius: 2px;
 }
 
 .videos-container::-webkit-scrollbar-thumb:hover {
