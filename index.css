@@ -151,7 +151,6 @@ h2 {
     background-color: #121212;
     z-index: 100;
     overflow-x: hidden;
-    overflow-y: hidden;
 }
 
 .video-modal-video-container {
@@ -159,7 +158,7 @@ h2 {
     flex-direction: row;
     column-gap: 2.5%;
     max-width: 100vw;
-    max-height: 100vh;
+    height: 100%;
     padding: 0px 2.5% 10px 2.5%;
 }
 
