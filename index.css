@@ -95,26 +95,20 @@ h2 {
 }
 
 .videos-container::-webkit-scrollbar {
-    height: 10px; 
+    height: 20px; 
     display: block; 
 }
 
-/* 3. Style the background track line of the scrollbar */
 .videos-container::-webkit-scrollbar-track {
-    background: #222222; /* Slightly lighter than your #121212 body background */
-    border-radius: 5px;
+    background-color: darkgray; 
 }
 
-/* 4. Style the draggable moving bar indicator (Thumb) */
 .videos-container::-webkit-scrollbar-thumb {
-    background: #ffffff; /* Crisp white bar to match your text theme colors */
-    border-radius: 5px;
-    border: 2px solid #222222; /* Creates padding space around the thumb */
+    background: white; 
 }
 
-/* 5. Highlight color when user hovers mouse cursor over scrollbar */
 .videos-container::-webkit-scrollbar-thumb:hover {
-    background: gray; 
+    background-color: gray; 
 }
 
 .videos-container-individual {
