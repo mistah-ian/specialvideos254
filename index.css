@@ -80,15 +80,12 @@ h2 {
     font-size: larger;
 }
 
-#models-wrapper {
-    margin-top: 40px;
-}
-
 .videos-container {
     display: flex;
     flex-direction: row;
     overflow-x: auto; 
     gap: 5%;
+    margin-top: 20px;
 }
 
 .videos-container-individual {
@@ -116,6 +113,7 @@ h2 {
 
 .video-title {
     font-size: medium;
+    text-align: center;
 }
 /* #endregion */
 
