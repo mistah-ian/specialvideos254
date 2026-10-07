@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
         searchOptions.innerHTML = `
             <div class="search-bar-options-item" data-model-id="all">
                 <p class="search-bar-options-item-title">All Models</p>
-                <p class="search-bar-options-item-desc">Show all available content</p>
+                <p class="search-bar-options-item-desc">Show all</p>
             </div>
         `;
 
