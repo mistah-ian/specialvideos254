@@ -76,6 +76,12 @@ button {
 /* #endregion */
 
 /* #region videos-containers */
+.model-complete {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+}
+
 h2 {
     font-size: larger;
 }
@@ -85,7 +91,6 @@ h2 {
     flex-direction: row;
     overflow-x: auto; 
     gap: 5%;
-    margin-top: 20px;
 }
 
 .videos-container-individual {
