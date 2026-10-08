@@ -235,6 +235,7 @@ h2 {
     align-items: center;
     justify-content: center;
     padding: 10px 2.5% 30px 2.5%;
+    text-align: center;
 }
 
 .paywall-modal-content-details-unlock-text {

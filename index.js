@@ -349,6 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (detailsView) detailsView.style.display = 'block';
         if (modalMainVideo) modalMainVideo.style.display = 'none';
+        if (modalMainVideoTitle) modalMainVideoTitle.style.display = 'none';
         if (waitView) waitView.style.display = 'none';
         if (payError) payError.style.display = 'none';
 
