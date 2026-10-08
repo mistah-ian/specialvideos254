@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 cardDiv.setAttribute('data-index', playlistIndex);
 
                 cardDiv.innerHTML = `
-                    <video controls controlslist="nodownload nopictureinpicture nofullscreen" disablepictureinpicture playsinline>
+                    <video controls controlslist="nodownload nopictureinpicture" disablepictureinpicture playsinline>
                         <source src="${path}" type="video/mp4">
                     </video>
                     <p class="video-title">${videoTitle}</p>
