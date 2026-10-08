@@ -285,7 +285,7 @@ h2 {
     font-size: large;
     font-weight: bold;
     border: 1px solid white;
-    background-color: white;
+    background-color: gray;
     color: black;
     border-radius: 2px;
 }
