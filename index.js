@@ -288,6 +288,8 @@ document.addEventListener("DOMContentLoaded", () => {
         modalVideo.load();
 
         videoModal.style.display = 'flex';
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
 
         // Check if unlocked for user
         const unlocked = isVideoUnlockedForUser(videoData.uniqueId);
@@ -319,6 +321,8 @@ document.addEventListener("DOMContentLoaded", () => {
         modalVideoSource.setAttribute('src', '');
         videoModal.style.display = 'none';
         paywallModal.style.display = 'none';
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
     }
 
     modalCloseBtn.addEventListener('click', closeVideoModal);
