@@ -142,7 +142,7 @@ h2 {
 /* #region video-modal */
 #video-modal {
     position: fixed;
-    display: flex;
+    display: none;
     flex-direction: column;
     padding: 0px 5% 30px 5%;
     top: 0;
