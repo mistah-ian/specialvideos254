@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
             searchOptions.innerHTML = `
                 <div class="search-bar-options-item" data-model-id="all">
                     <p class="search-bar-options-item-title">All Models</p>
-                    <p class="search-bar-options-item-desc">Show all available content</p>
+                    <p class="search-bar-options-item-desc">Show all</p>
                 </div>
             `;
         }
@@ -348,6 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
             payBtn.textContent = `Pay ${videoData.priceText}`;
         }
         if (detailsView) detailsView.style.display = 'block';
+        if (modalMainVideo) modalMainVideo.style.display = 'none';
         if (waitView) waitView.style.display = 'none';
         if (payError) payError.style.display = 'none';
 
