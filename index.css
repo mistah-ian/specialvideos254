@@ -142,8 +142,9 @@ h2 {
 /* #region video-modal */
 #video-modal {
     position: fixed;
-    display: none;
+    display: flex;
     flex-direction: column;
+    padding: 0px 5% 30px 5%;
     top: 0;
     left: 0;
     right: 0;
@@ -153,41 +154,10 @@ h2 {
     overflow-x: hidden;
 }
 
-.video-modal-video-container {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: center;
-    column-gap: 2.5%;
-    max-width: 100vw;
-    height: 100%;
-    padding: 0px 2.5% 10px 2.5%;
-}
-
-.video-modal-video-container-previous, .video-modal-video-container-next {
-    height: 100%;
-    display: flex;
-    align-items: center;
-}
-
-#video-modal-video-container-previous-btn, #video-modal-video-container-next-btn {
-    font-size: 75px;
-    font-weight: bold;
-    background: none;
-    border: none;
-    color: white;
-}
-
-.video-modal-video-container video {
-    width: 70%;
-    height: 100%;
-    pointer-events: auto; 
-}
-
 .video-modal-close {
     display: flex;
     justify-content: flex-end;
-    padding: 0px 5%;
+    padding: 0px;
     margin: 0px;
 }
 
@@ -199,59 +169,72 @@ h2 {
     margin: 0px;
     font-size: 60px;
 }
+
+.video-modal-videos-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    row-gap: 10px;
+    width: 100%;
+    padding: 10px 0px;
+}
+
+.video-modal-videos-container-main-video-div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+    border: 1px solid white;
+    border-radius: 2px;
+}
+
+.video-modal-videos-container-main-video-div video {
+    width: 100%;
+    height: 300px;
+    pointer-events: auto; 
+}
+
+.video-modal-videos-container-other-videos-div {
+    width: 100%;
+    border: 1px solid white;
+    border-radius: 2px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 30px;
+    column-gap: 2.5%;
+}
+
+.video-modal-videos-container-other-videos-div-individual {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-modal-videos-container-other-videos-div-individual video {
+    width: 100%;
+    height: 100px;
+    pointer-events: none;
+}
 /* #endregion */
 
 /* #region paywall-modal */
 #paywall-modal {
-    position: fixed;
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 101;
-    overflow-y: hidden;
-    overflow-x: hidden;
-    padding: 0px;
-    margin: 0px;
 }
 
-.paywall-modal-content {
+.paywall-modal-content-details {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: #121212;
-    text-align: center;
-    font-size: large;
-    height: 100%;
-    width: 75%;
-    color: white;
-}
-
-.paywall-modal-content-close {
-    width: 90%;
-    display: flex;
-    justify-content: flex-end;
-    padding: 0px 5%;
-    margin: 0px;
-}
-
-#paywall-modal-content-close-btn {
-    background: none;
-    border: none;
-    color: white;
-    padding: 0px;
-    margin: 0px;
-    font-size: 50px;
-}
-
-.paywall-modal-content-details {
-    padding: 0px 2.5% 30px 2.5%;
+    padding: 10px 2.5% 30px 2.5%;
 }
 
 .paywall-modal-content-details-unlock-text {
@@ -284,9 +267,9 @@ h2 {
     padding: 10px;
     font-size: large;
     font-weight: bold;
-    border: 1px solid gray;
-    background-color: gray;
-    color: black;
+    border: 1px solid green;
+    background-color: green;
+    color: white;
     border-radius: 2px;
 }
 
@@ -296,6 +279,7 @@ h2 {
     justify-content: center;
     align-items: center;
     font-size: larger;
+    padding: 10px 2.5% 30px 2.5%;
 }
 
 @keyframes spin {
@@ -312,6 +296,18 @@ h2 {
   border-top-color: transparent;
   border-radius: 50%;
   vertical-align: middle;
+}
+
+.pay-btn-animate-spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid white;
+  border-top-color: transparent;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 6px;
 }
 /* #endregion */
 
@@ -347,10 +343,5 @@ h2 {
 }
 .video-title {
     font-size: large;
-}
-
-.video-modal-video-container video {
-    width: 100%;
-    height: 100%;
 }
 }

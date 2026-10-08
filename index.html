@@ -35,7 +35,7 @@
       <div id="search-bar-options">
         <div class="search-bar-options-item" data-model-id="all">
           <p class="search-bar-options-item-title">All Models</p>
-          <p class="search-bar-options-item-desc">Show all</p>
+          <p class="search-bar-options-item-desc">Show all available content</p>
         </div>
       </div>
 
@@ -44,44 +44,52 @@
     <div id="models-wrapper"></div>
 
     <div id="video-modal">
+
       <div class="video-modal-close">
         <button id="video-modal-close-btn">&times;</button>
       </div>
 
-      <div class="video-modal-video-container">
-        <div class="video-modal-video-container-previous">
-          <button id="video-modal-video-container-previous-btn">&lsaquo;</button>
+      <h2 class="video-modal-model-name"></h2>
+
+      <div class="video-modal-videos-container">
+
+        <div class="video-modal-videos-container-main-video-div">
+
+          <video controls controlslist="nodownload nopictureinpicture nofullscreen" disablepictureinpicture playsinline>
+            <source src="" type="video/mp4">
+          </video>
+          <p class="video-modal-main-video-title"></p>
+
+          <div id="paywall-modal">
+
+            <div class="paywall-modal-content-details">
+              <p class="paywall-modal-content-details-unlock-text">Unlock the full video.</p>
+              <p class="paywall-modal-content-details-phone-number-text">Phone Number</p>
+              <input type="tel" id="paywall-modal-content-details-phone-number-input" placeholder="0XXXXXXXXX" autocomplete="tel" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+              <p class="paywall-modal-content-details-phone-number-invalid-error">*Invalid Phone Number*</p>
+              <button type="button" id="paywall-modal-content-details-pay-btn">Pay KES 1.00</button>
+            </div>
+
+            <div class="paywall-modal-content-please-wait">
+              <p class="paywall-modal-content-please-wait-text">Please wait while we confirm your payment...</p>
+              <div class="paywall-modal-content-please-wait-spinner"></div>
+            </div>
+
+          </div>
+
         </div>
 
-        <video controls controlslist="nodownload nopictureinpicture nofullscreen" disablepictureinpicture playsinline>
-          <source src="" type="video/mp4">
-        </video>
+        <div class="video-modal-videos-container-other-videos-div">
 
-        <div class="video-modal-video-container-next">
-          <button id="video-modal-video-container-next-btn">&rsaquo;</button>
-        </div>
-      </div>
-    </div>
+          <div class="video-modal-videos-container-other-videos-div-individual">
+            <video controls controlslist="nodownload nopictureinpicture nofullscreen" disablepictureinpicture playsinline>
+              <source src="" type="video/mp4">
+            </video>
+            <p class="video-modal-other-video-title"></p>
+          </div>
 
-    <div id="paywall-modal">
-
-      <div class="paywall-modal-content">
-        <div class="paywall-modal-content-close">
-          <button id="paywall-modal-content-close-btn">&times;</button>
         </div>
 
-        <div class="paywall-modal-content-details">
-          <p class="paywall-modal-content-details-unlock-text">Unlock the full video.</p>
-          <p class="paywall-modal-content-details-phone-number-text">Phone Number</p>
-          <input type="tel" id="paywall-modal-content-details-phone-number-input" placeholder="0X-XXX-XXX-XX" autocomplete="tel" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-          <p class="paywall-modal-content-details-phone-number-invalid-error">*Invalid Phone Number*</p>
-          <button type="button" id="paywall-modal-content-details-pay-btn">Pay KES 1.00</button>
-        </div>
-
-        <div class="paywall-modal-content-please-wait">
-          <p class="paywall-modal-content-please-wait-text">Please wait while we confirm your payment...</p>
-          <div class="paywall-modal-content-please-wait-spinner"></div>
-        </div>
       </div>
 
     </div>
