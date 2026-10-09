@@ -5,6 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentModelData = null;
     let currentMainVideo = null;
     let previewTimer = null;
+    let pollInterval = null;
     let tokensDatabase = [];
 
     // Local Storage: Only the user's phone number is stored locally
@@ -255,37 +256,76 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* =========================================
-       6. Video Modal & Other Videos Rendering
+       6. Comprehensive State Reset & Modal Controls
        ========================================= */
+    function resetModalState() {
+        // Clear timers and polling intervals
+        if (previewTimer) {
+            clearTimeout(previewTimer);
+            previewTimer = null;
+        }
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+
+        // Reset main video elements visibility & playback
+        if (modalMainVideo) {
+            modalMainVideo.pause();
+            modalMainVideo.currentTime = 0;
+            modalMainVideo.style.display = ''; // Restore standard display
+        }
+        if (modalMainVideoTitle) {
+            modalMainVideoTitle.style.display = ''; // Restore standard display
+        }
+        if (modalMainVideoSource) {
+            modalMainVideoSource.setAttribute('src', '');
+        }
+
+        // Hide paywall modal and reset view states
+        if (paywallModal) paywallModal.style.display = 'none';
+        if (detailsView) detailsView.style.display = 'block';
+        if (waitView) waitView.style.display = 'none';
+        if (payError) payError.style.display = 'none';
+
+        // Reset pay button
+        if (payBtn) {
+            payBtn.disabled = false;
+            if (currentMainVideo) {
+                payBtn.textContent = `Pay ${currentMainVideo.priceText}`;
+            }
+        }
+    }
+
     function openVideoModal(modelData, selectedVideo) {
         if (!videoModal) return;
+
+        // Reset all active timers and UI overrides before loading new video
+        resetModalState();
 
         currentModelData = modelData;
         currentMainVideo = selectedVideo;
 
         if (modalModelName) modalModelName.textContent = modelData.model_name;
 
-        // Set Main Video
+        // Load new video
         if (modalMainVideoSource && modalMainVideo) {
             modalMainVideoSource.setAttribute('src', selectedVideo.src);
             modalMainVideo.load();
         }
         if (modalMainVideoTitle) modalMainVideoTitle.textContent = selectedVideo.title;
 
-        // Populate Other Videos of the same model
+        // Render remaining model videos
         renderOtherVideos(modelData, selectedVideo.uniqueId);
 
-        // Hide Paywall initial state
-        if (paywallModal) paywallModal.style.display = 'none';
-
+        // Show modal and lock page scrolling
         videoModal.style.display = 'flex';
         document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
 
-        // Check Access & Trigger Preview Timer
+        // Check if user already unlocked this video
         const unlocked = isVideoUnlockedForUser(selectedVideo.uniqueId);
 
-        clearTimeout(previewTimer);
         if (!unlocked) {
             previewTimer = setTimeout(() => {
                 triggerPaywall(selectedVideo);
@@ -306,7 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
         paths.forEach((path, idx) => {
             if (!path) return;
             const uniqueId = uniqueIds[idx] || `${model.id}-${idx + 1}`;
-            if (uniqueId === currentUniqueId) return; // Skip currently active main video
+            if (uniqueId === currentUniqueId) return;
 
             const videoTitle = titles[idx] || `Video ${idx + 1}`;
             const pTimeMs = parseInt(previewTimes[idx]) || 5000;
@@ -357,13 +397,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function closeVideoModal() {
-        clearTimeout(previewTimer);
-        if (modalMainVideo) modalMainVideo.pause();
-        if (modalMainVideoSource) modalMainVideoSource.setAttribute('src', '');
+        resetModalState();
         if (videoModal) videoModal.style.display = 'none';
-        if (paywallModal) paywallModal.style.display = 'none';
         document.documentElement.style.overflow = '';
         document.body.style.overflow = '';
+        currentModelData = null;
+        currentMainVideo = null;
     }
 
     if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeVideoModal);
@@ -383,11 +422,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (payError) payError.style.display = 'none';
             const originalBtnText = `Pay ${currentMainVideo.priceText}`;
 
-            // Save phone to LocalStorage
             localStorage.setItem('user_phone', validPhone);
             storedPhone = validPhone;
 
-            // Disable button and show spinner
             payBtn.disabled = true;
             payBtn.innerHTML = '<span class="pay-btn-animate-spin"></span> Sending M-Pesa prompt...';
 
@@ -428,20 +465,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function pollPaymentStatus(checkoutId) {
-        const interval = setInterval(async () => {
+        if (pollInterval) clearInterval(pollInterval);
+
+        pollInterval = setInterval(async () => {
             try {
                 const res = await fetch(`${SERVER_URL}/mmw.php?action=check_payment&checkout_id=${checkoutId}`);
                 const result = await res.json();
 
                 if (result.status === 'COMPLETED') {
-                    clearInterval(interval);
+                    clearInterval(pollInterval);
+                    pollInterval = null;
 
                     const tokensRes = await fetch(`${SERVER_URL}/mmw.php?action=get_tokens&t=${Date.now()}`);
                     if (tokensRes.ok) {
                         tokensDatabase = await tokensRes.json();
                     }
 
+                    // Restore video UI elements and hide paywall
                     if (paywallModal) paywallModal.style.display = 'none';
+                    if (modalMainVideo) modalMainVideo.style.display = '';
+                    if (modalMainVideoTitle) modalMainVideoTitle.style.display = '';
+
                     alert("Payment successful! Full video unlocked for 24 hours.");
 
                     if (modalMainVideo) modalMainVideo.play();
