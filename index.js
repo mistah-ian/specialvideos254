@@ -6,10 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentMainVideo = null;
     let previewTimer = null;
     let pollInterval = null;
+    let onVideoPlayHandler = null;
     let tokensDatabase = [];
-
-    // Local Storage: Only the user's phone number is stored locally
-    let storedPhone = localStorage.getItem('user_phone') || '';
 
     // DOM Elements Selection
     const searchBtn = document.getElementById('search-bar-btn');
@@ -34,13 +32,52 @@ document.addEventListener("DOMContentLoaded", () => {
     const detailsView = document.querySelector('.paywall-modal-content-details');
     const waitView = document.querySelector('.paywall-modal-content-please-wait');
 
-    // Pre-fill input if phone exists in LocalStorage
-    if (storedPhone && payInput) {
-        payInput.value = storedPhone.replace(/\D/g, '').slice(0, 10);
+    const waitText = document.querySelector('.paywall-modal-content-please-wait-please-wait-text');
+    const waitTimeText = document.querySelector('.paywall-modal-content-please-wait-time-text');
+    const waitSpinner = document.querySelector('.paywall-modal-content-please-wait-spinner');
+
+    /* =========================================
+       1. Multi-Phone LocalStorage Helpers
+       ========================================= */
+    function getStoredPhones() {
+        try {
+            const raw = localStorage.getItem('user_phones');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch (e) {}
+
+        // Fallback for legacy single-phone storage
+        const legacy = localStorage.getItem('user_phone');
+        if (legacy) {
+            const clean = legacy.replace(/\D/g, '').slice(0, 10);
+            if (clean) return [clean];
+        }
+        return [];
+    }
+
+    function addStoredPhone(phone) {
+        const phones = getStoredPhones();
+        const clean = phone.replace(/\D/g, '').slice(0, 10);
+        if (!clean) return;
+
+        // Move to end if existing, ensuring latest phone is last
+        const filtered = phones.filter(p => p !== clean);
+        filtered.push(clean);
+
+        localStorage.setItem('user_phones', JSON.stringify(filtered));
+        localStorage.setItem('user_phone', clean); // Maintain single-phone fallback key
+    }
+
+    // Pre-fill input with the most recently used phone number
+    const storedPhones = getStoredPhones();
+    if (storedPhones.length > 0 && payInput) {
+        payInput.value = storedPhones[storedPhones.length - 1];
     }
 
     /* =========================================
-       1. Phone Input Handling (Digits Only)
+       2. Phone Input Handling (Digits Only)
        ========================================= */
     if (payInput) {
         payInput.addEventListener('input', (e) => {
@@ -57,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /* =========================================
-       2. Initialize Catalog & Access Tokens
+       3. Initialize Catalog & Access Tokens
        ========================================= */
     async function initPlatform() {
         try {
@@ -74,43 +111,52 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (err) {
             console.error("Error initializing platform catalog:", err);
             if (modelsWrapper) {
-                modelsWrapper.innerHTML = '<p style="text-align:center; color: white;">Failed to load catalog. Please refresh.</p>';
+                modelsWrapper.innerHTML = '<p style="text-align:center; color: red; font-size:large; margin-top: 30px;">Failed to load catalog. Please refresh.</p>';
             }
         }
     }
 
     /* =========================================
-       3. Access Control Verification
+       4. Multi-Phone Access Verification
        ========================================= */
     function isVideoUnlockedForUser(uniqueId) {
-        if (!storedPhone) return false;
-        const userDigits = storedPhone.replace(/\D/g, '');
+        const phonesList = getStoredPhones();
+        if (phonesList.length === 0) return false;
 
-        const record = tokensDatabase.find(item => item.phone_number && item.phone_number.replace(/\D/g, '') === userDigits);
-        if (!record || !record.accessible_videos_ids) return false;
+        // Iterate through all stored phone numbers
+        for (const phone of phonesList) {
+            const userDigits = phone.replace(/\D/g, '');
 
-        const ids = record.accessible_videos_ids.split(' | ').map(s => s.trim());
-        const dates = record.expiration_dates ? record.expiration_dates.split(' | ').map(s => s.trim()) : [];
+            const record = tokensDatabase.find(item => item.phone_number && item.phone_number.replace(/\D/g, '') === userDigits);
+            if (!record || !record.accessible_videos_ids) continue;
 
-        const index = ids.indexOf(uniqueId);
-        if (index === -1) return false;
+            const ids = record.accessible_videos_ids.split(' | ').map(s => s.trim());
+            const dates = record.expiration_dates ? record.expiration_dates.split(' | ').map(s => s.trim()) : [];
 
-        const expString = dates[index];
-        if (!expString) return false;
+            const index = ids.indexOf(uniqueId);
+            if (index === -1) continue;
 
-        const [datePart, timePart] = expString.split('-');
-        if (!datePart || !timePart) return false;
+            const expString = dates[index];
+            if (!expString) continue;
 
-        const [m, d, y] = datePart.split('/');
-        const hh = timePart.slice(0, 2);
-        const mm = timePart.slice(2, 4);
+            const [datePart, timePart] = expString.split('-');
+            if (!datePart || !timePart) continue;
 
-        const expDate = new Date(y, m - 1, d, hh, mm);
-        return Date.now() < expDate.getTime();
+            const [m, d, y] = datePart.split('/');
+            const hh = timePart.slice(0, 2);
+            const mm = timePart.slice(2, 4);
+
+            const expDate = new Date(y, m - 1, d, hh, mm);
+            if (Date.now() < expDate.getTime()) {
+                return true; // Video is validly unlocked under at least one stored phone number!
+            }
+        }
+
+        return false;
     }
 
     /* =========================================
-       4. Render Catalog & Search Dropdown
+       5. Render Catalog & Search Dropdown
        ========================================= */
     function renderCatalog(catalog) {
         if (!modelsWrapper) return;
@@ -193,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /* =========================================
-       5. Dropdown Navigation
+       6. Dropdown Navigation
        ========================================= */
     function openDropdown() {
         if (!searchOptions) return;
@@ -256,10 +302,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /* =========================================
-       6. Comprehensive State Reset & Modal Controls
+       7. State Reset & Modal Controls
        ========================================= */
     function resetModalState() {
-        // Clear timers and polling intervals
         if (previewTimer) {
             clearTimeout(previewTimer);
             previewTimer = null;
@@ -269,26 +314,37 @@ document.addEventListener("DOMContentLoaded", () => {
             pollInterval = null;
         }
 
-        // Reset main video elements visibility & playback
         if (modalMainVideo) {
+            if (onVideoPlayHandler) {
+                modalMainVideo.removeEventListener('play', onVideoPlayHandler);
+                onVideoPlayHandler = null;
+            }
             modalMainVideo.pause();
             modalMainVideo.currentTime = 0;
-            modalMainVideo.style.display = ''; // Restore standard display
+            modalMainVideo.style.display = '';
         }
+
         if (modalMainVideoTitle) {
-            modalMainVideoTitle.style.display = ''; // Restore standard display
+            modalMainVideoTitle.style.display = '';
         }
         if (modalMainVideoSource) {
             modalMainVideoSource.setAttribute('src', '');
         }
 
-        // Hide paywall modal and reset view states
         if (paywallModal) paywallModal.style.display = 'none';
         if (detailsView) detailsView.style.display = 'block';
         if (waitView) waitView.style.display = 'none';
         if (payError) payError.style.display = 'none';
 
-        // Reset pay button
+        if (waitText) {
+            waitText.innerHTML = 'Please wait while we confirm your payment.';
+            waitText.style.color = '';
+            waitText.style.fontSize = '';
+            waitText.style.textAlign = '';
+        }
+        if (waitTimeText) waitTimeText.style.display = '';
+        if (waitSpinner) waitSpinner.style.display = '';
+
         if (payBtn) {
             payBtn.disabled = false;
             if (currentMainVideo) {
@@ -300,7 +356,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function openVideoModal(modelData, selectedVideo) {
         if (!videoModal) return;
 
-        // Reset all active timers and UI overrides before loading new video
         resetModalState();
 
         currentModelData = modelData;
@@ -308,28 +363,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (modalModelName) modalModelName.textContent = modelData.model_name;
 
-        // Load new video
         if (modalMainVideoSource && modalMainVideo) {
             modalMainVideoSource.setAttribute('src', selectedVideo.src);
             modalMainVideo.load();
         }
         if (modalMainVideoTitle) modalMainVideoTitle.textContent = selectedVideo.title;
 
-        // Render remaining model videos
         renderOtherVideos(modelData, selectedVideo.uniqueId);
 
-        // Show modal and lock page scrolling
         videoModal.style.display = 'flex';
         document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
 
-        // Check if user already unlocked this video
         const unlocked = isVideoUnlockedForUser(selectedVideo.uniqueId);
 
-        if (!unlocked) {
-            previewTimer = setTimeout(() => {
-                triggerPaywall(selectedVideo);
-            }, selectedVideo.previewTimeMs);
+        if (!unlocked && modalMainVideo) {
+            onVideoPlayHandler = () => {
+                clearTimeout(previewTimer);
+                previewTimer = setTimeout(() => {
+                    triggerPaywall(selectedVideo);
+                }, selectedVideo.previewTimeMs);
+            };
+            modalMainVideo.addEventListener('play', onVideoPlayHandler, { once: true });
         }
     }
 
@@ -408,7 +463,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeVideoModal);
 
     /* =========================================
-       7. Payment Triggering & Polling
+       8. Payment Triggering & Polling
        ========================================= */
     if (payBtn) {
         payBtn.addEventListener('click', async () => {
@@ -422,8 +477,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (payError) payError.style.display = 'none';
             const originalBtnText = `Pay ${currentMainVideo.priceText}`;
 
-            localStorage.setItem('user_phone', validPhone);
-            storedPhone = validPhone;
+            // Save phone to array in localStorage
+            addStoredPhone(validPhone);
 
             payBtn.disabled = true;
             payBtn.innerHTML = '<span class="pay-btn-animate-spin"></span> Sending M-Pesa prompt...';
@@ -481,14 +536,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         tokensDatabase = await tokensRes.json();
                     }
 
-                    // Restore video UI elements and hide paywall
-                    if (paywallModal) paywallModal.style.display = 'none';
-                    if (modalMainVideo) modalMainVideo.style.display = '';
-                    if (modalMainVideoTitle) modalMainVideoTitle.style.display = '';
+                    if (waitText) {
+                        waitText.innerHTML = '&#10003; Payment successful!';
+                        waitText.style.color = 'green';
+                        waitText.style.fontSize = 'larger';
+                        waitText.style.textAlign = 'center';
+                    }
+                    if (waitTimeText) waitTimeText.style.display = 'none';
+                    if (waitSpinner) waitSpinner.style.display = 'none';
 
-                    alert("Payment successful! Full video unlocked for 24 hours.");
-
-                    if (modalMainVideo) modalMainVideo.play();
+                    setTimeout(() => {
+                        if (paywallModal) paywallModal.style.display = 'none';
+                        if (modalMainVideo) {
+                            modalMainVideo.style.display = '';
+                            modalMainVideo.play();
+                        }
+                        if (modalMainVideoTitle) modalMainVideoTitle.style.display = '';
+                    }, 1000);
                 }
             } catch (e) {
                 // Ignore transient network errors

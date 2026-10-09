@@ -212,6 +212,7 @@ h2 {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    border: 3px solid black;
 }
 
 .video-modal-videos-container-other-videos-div-individual video {
@@ -227,6 +228,8 @@ h2 {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    width: 80%;
+    background-color: gray;
 }
 
 .paywall-modal-content-details {
@@ -236,8 +239,7 @@ h2 {
     justify-content: center;
     padding: 10px 2.5% 30px 2.5%;
     text-align: center;
-    width: 99%;
-    max-width: 99%;
+    width: 100%;
 }
 
 .paywall-modal-content-details-unlock-text {
@@ -251,10 +253,11 @@ h2 {
     font-weight: bold;
     padding: 10px;
     margin-top: -5px;
-    border-radius: 2px;
+    border-radius: 4px;
     border: 1px solid black;
     background-color: white;
     color: black;
+    letter-spacing: 3px;
 }
 
 .paywall-modal-content-details-phone-number-invalid-error {
@@ -268,8 +271,6 @@ h2 {
 #paywall-modal-content-details-pay-btn {
     margin-top: 30px;
     width: 80%;
-    max-width: 80%; 
-    box-sizing: border-box;
     padding: 10px;
     font-size: large;
     font-weight: bold;
@@ -277,8 +278,6 @@ h2 {
     background-color: green;
     color: white;
     border-radius: 2px;
-    white-space: normal;
-    word-break: break-word;
 }
 
 .paywall-modal-content-please-wait {
@@ -289,6 +288,7 @@ h2 {
     text-align: center;
     font-size: larger;
     padding: 10px 2.5% 30px 2.5%;
+    width: 100%;
 }
 
 @keyframes spin {
@@ -305,6 +305,7 @@ h2 {
   border-top-color: transparent;
   border-radius: 50%;
   vertical-align: middle;
+  margin-top: 25px;
 }
 
 .pay-btn-animate-spin {
@@ -352,5 +353,21 @@ h2 {
 }
 .video-title {
     font-size: large;
+}
+
+#video-modal {
+    font-size: larger;
+}
+.video-modal-videos-container-main-video-div video {
+    width: 100%;
+    height: 500px;
+}
+.video-modal-videos-container-other-videos-div-individual video {
+    width: 100%;
+    height: 300px;
+}
+
+#paywall-modal {
+    width: 40%;
 }
 }
