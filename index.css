@@ -144,7 +144,7 @@ h2 {
     position: fixed;
     display: none;
     flex-direction: column;
-    padding: 0px 5% 30px 5%;
+    padding: 30px 5%;
     top: 0;
     left: 0;
     right: 0;
@@ -246,6 +246,7 @@ h2 {
 #paywall-modal-content-details-phone-number-input {
     width: 80%;
     font-size: larger;
+    font-weight: bold;
     padding: 10px;
     margin-top: -5px;
     border-radius: 2px;
@@ -265,6 +266,8 @@ h2 {
 #paywall-modal-content-details-pay-btn {
     margin-top: 30px;
     width: 80%;
+    max-width: 80%; 
+    box-sizing: border-box;
     padding: 10px;
     font-size: large;
     font-weight: bold;
@@ -272,6 +275,8 @@ h2 {
     background-color: green;
     color: white;
     border-radius: 2px;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .paywall-modal-content-please-wait {
