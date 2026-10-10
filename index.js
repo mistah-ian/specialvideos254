@@ -139,15 +139,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const expString = dates[index];
             if (!expString) continue;
 
-            const [datePart, timePart] = expString.split('-');
-            if (!datePart || !timePart) continue;
-
-            const [m, d, y] = datePart.split('/');
-            const hh = timePart.slice(0, 2);
-            const mm = timePart.slice(2, 4);
-
             const expDate = new Date(expString); // ISO strings parse natively and accurately in all browsers
-            return Date.now() < expDate.getTime();
+            if (Date.now() < expDate.getTime()) {
+                return true;
+            }
         }
 
         return false;
@@ -373,7 +368,12 @@ document.addEventListener("DOMContentLoaded", () => {
         document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
 
-        const unlocked = isVideoUnlockedForUser(selectedVideo.uniqueId);
+        // Check if video is explicitly free (contains '0' or 'free' in price text)
+        const priceClean = (selectedVideo.priceText || '').toLowerCase();
+        const isVideoFree = priceClean.includes('0') || priceClean.includes('free');
+
+        // Instant unlock if free or if token exists under stored phone numbers
+        const unlocked = isVideoFree || isVideoUnlockedForUser(selectedVideo.uniqueId);
 
         if (!unlocked && modalMainVideo) {
             onVideoPlayHandler = () => {
