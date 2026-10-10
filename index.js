@@ -146,10 +146,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const hh = timePart.slice(0, 2);
             const mm = timePart.slice(2, 4);
 
-            const expDate = new Date(y, m - 1, d, hh, mm);
-            if (Date.now() < expDate.getTime()) {
-                return true; // Video is validly unlocked under at least one stored phone number!
-            }
+            const expDate = new Date(expString); // ISO strings parse natively and accurately in all browsers
+            return Date.now() < expDate.getTime();
         }
 
         return false;
